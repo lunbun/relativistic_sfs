@@ -18,6 +18,6 @@ target_include_directories(relativistic_sfs PRIVATE
 
 add_subdirectory(lib)
 
-target_link_libraries(relativistic_sfs glfw glad)
+target_link_libraries(relativistic_sfs glfw glad imgui)
 
 add_subdirectory(src)
