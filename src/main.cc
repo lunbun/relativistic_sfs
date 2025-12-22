@@ -1,9 +1,11 @@
 #include <iostream>
+#include <chrono>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -24,6 +26,7 @@ int main() {
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Spaceflight Simulator", nullptr, nullptr);
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
     if (!window)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -60,6 +63,10 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
     ImGui_ImplOpenGL3_Init();
 
+    int fps = 0;
+    int frameCount = 0;
+    std::chrono::time_point<std::chrono::steady_clock> lastFpsReading = std::chrono::steady_clock::now();
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
@@ -70,7 +77,8 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow(); // Show demo window! :)
+
+        ImGui::Text("%d fps", fps);
 
         // Render
         // Clear the colorbuffer
@@ -82,6 +90,15 @@ int main() {
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
+
+        frameCount++;
+        auto now = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - lastFpsReading).count();
+        if (duration >= 1) {
+            fps = frameCount;
+            frameCount = 0;
+            lastFpsReading = now;
+        }
     }
 
     ImGui_ImplOpenGL3_Shutdown();

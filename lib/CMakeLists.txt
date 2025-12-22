@@ -15,6 +15,7 @@ add_library(imgui STATIC
         external/imgui/imgui_widgets.cpp
         external/imgui/backends/imgui_impl_glfw.cpp
         external/imgui/backends/imgui_impl_opengl3.cpp
+        external/imgui/misc/cpp/imgui_stdlib.cpp
 )
 target_link_libraries(imgui
         PUBLIC glfw
