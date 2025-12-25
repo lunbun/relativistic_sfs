@@ -60,13 +60,17 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
         double C = stumpff_C(z);
         double S = stumpff_S(z);
         double F = evaluateUniversalKepler(p, chi, C, S) - p.sqrt_mu * dt;
-        if (fabs(F) < 1e-7) {
+        if (fabs(F / p.sqrt_mu) < 1e-12) {
             if (out_C) *out_C = C;
             if (out_S) *out_S = S;
             return chi;
         }
         double dF = p.r0_norm * p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
-        chi = std::clamp(chi - F / dF, chi_min, chi_max);  // Prevent overshoot
+        double delta = F / dF;
+        chi = std::clamp(chi - delta, chi_min, chi_max);  // Prevent overshoot
+        if (fabs(delta / fmax(1, fabs(chi))) < 1e-12) {
+            break;
+        }
     }
 
     double z = p.alpha * chi * chi;
