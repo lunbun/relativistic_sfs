@@ -29,17 +29,17 @@ double stumpff_S(double z) {
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
     // Newton-Raphson iteration to solve for chi
     double chi = p.sqrt_mu * p.alpha * dt;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 8; i++) {
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
-        double F = p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi - p.sqrt_mu * dt;
-        if (fabs(F) < 1e-6) {
+        double F = p.r0_norm * p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi - p.sqrt_mu * dt;
+        if (fabs(F) < 1e-7) {
             if (out_C) *out_C = C;
             if (out_S) *out_S = S;
             return chi;
         }
-        double dF = p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
+        double dF = p.r0_norm * p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
         chi = chi - F / dF;
     }
 
@@ -49,25 +49,9 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
     return chi;
 }
 
-void keplerPropagate(double chi, const KeplerParameters &p, double C, double S, double dt, Eigen::Vector3d &r, Eigen::Vector3d &v) {
+void keplerPropagate(double chi, const KeplerParameters &p, double C, double S, double dt, Eigen::Vector3d &r, Eigen::Vector3d *v) {
     double z = p.alpha * chi * chi;
     double f = 1 - chi * chi / p.r0_norm * C;
-    double g = dt - chi * chi * chi / p.sqrt_mu * S;
-    r = f * p.r0 + g * p.v0;
-
-    double f_dot = p.sqrt_mu / (r.norm() * p.r0_norm) * chi * (z * S - 1.0);
-    double g_dot = 1.0 - chi * chi / r.norm() * C;
-    v = f_dot * p.r0 + g_dot * p.v0;
-}
-
-// Kepler propagation with unknown dt
-void keplerPropagateUnknownTime(double chi, const KeplerParameters &p, Eigen::Vector3d &r, Eigen::Vector3d *v) {
-    double z = p.alpha * chi * chi;
-    double C = stumpff_C(z);
-    double S = stumpff_S(z);
-    double f = 1 - chi * chi / p.r0_norm * C;
-    // TODO: possibly can be optimized by avoiding recalculation of dt
-    double dt = (p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi) / p.sqrt_mu;
     double g = dt - chi * chi * chi / p.sqrt_mu * S;
     r = f * p.r0 + g * p.v0;
 
@@ -78,11 +62,21 @@ void keplerPropagateUnknownTime(double chi, const KeplerParameters &p, Eigen::Ve
     }
 }
 
+// Kepler propagation with unknown dt
+void keplerPropagateUnknownTime(double chi, const KeplerParameters &p, Eigen::Vector3d &r, Eigen::Vector3d *v) {
+    double z = p.alpha * chi * chi;
+    double C = stumpff_C(z);
+    double S = stumpff_S(z);
+    // TODO: possibly can be optimized by avoiding recalculation of dt
+    double dt = (p.r0_norm * p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi) / p.sqrt_mu;
+    keplerPropagate(chi, p, C, S, dt, r, v);
+}
+
 } // namespace
 
 // TODO: Technically, we do not have to recalculate parameters if no external forces are applied
 //  It is also better to avoid recalculation if no external forces occur since
-//  numerical errors can accumulate in alpha (the specifc orbital energy) over
+//  numerical errors can accumulate in alpha (the specific orbital energy) over
 //  time otherwise.
 void recalculateAllKeplerParameters(entt::registry &registry) {
     auto view = registry.view<NumIntegrState, Body, KeplerParameters>();
@@ -121,7 +115,7 @@ void keplerPropagationSystem(entt::registry &registry, double dt) {
         double chi = solveUniversalKeplerEquation(p, dt, &C, &S);
 
         Eigen::Vector3d r, v;
-        keplerPropagate(chi, p, C, S, dt, r, v);
+        keplerPropagate(chi, p, C, S, dt, r, &v);
 
         state.st.pos = primaryState.st.pos + r;
         state.st.vel = primaryState.st.vel + v;

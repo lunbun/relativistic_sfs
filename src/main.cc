@@ -226,6 +226,9 @@ int main() {
 
     double time = 0.0;
 
+    syncState<BodyState, NumIntegrState>(registry);
+    recalculateAllKeplerParameters(registry);
+
     // Game loop
     while (!glfwWindowShouldClose(window))
     {
