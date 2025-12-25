@@ -8,7 +8,9 @@ AlignConsecutiveDeclarations: false
 AlignOperands: true
 AlignTrailingComments: false
 AlwaysBreakTemplateDeclarations: Yes
-BraceWrapping: 
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+BraceWrapping:
   AfterCaseLabel: false
   AfterClass: false
   AfterControlStatement: false
@@ -28,10 +30,11 @@ BraceWrapping:
 BreakBeforeBraces: Custom
 BreakConstructorInitializers: AfterColon
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit: 120
+ColumnLimit: 150
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ContinuationIndentWidth: 8
-IncludeCategories: 
+Cpp11BracedListStyle: false
+IncludeCategories:
   - Regex: '^<.*'
     Priority: 1
   - Regex: '^".*'
@@ -47,11 +50,12 @@ MacroBlockEnd: ''
 MaxEmptyLinesToKeep: 3
 SpaceAfterCStyleCast: true
 SpaceAfterTemplateKeyword: false
-SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyParentheses: false
 SpacesInAngles: false
 SpacesInConditionalStatement: false
 SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
+SpaceInEmptyBlock: true
 TabWidth: 4
 ...
