@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 
@@ -14,3 +16,7 @@ struct KeplerParameters {
 
 void recalculateAllKeplerParameters(entt::registry &registry);
 void keplerPropagationSystem(entt::registry &registry, double dt);
+
+// NB: Caller must clear the `points` vector before calling
+// NB: Sampled points are relative to the primary's position at the current time
+void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector3d> &points, int n);

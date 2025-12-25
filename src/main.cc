@@ -76,26 +76,27 @@ void render(entt::registry &registry) {
 }
 
 void renderTrajectories(entt::registry &registry) {
-    // constexpr double dt = 1.0e5;
-    // constexpr int steps = 15;
-    //
-    // auto view = registry.view<BodyState, NumIntegrState, TempState, RenderTrajectory>();
-    // glLineWidth(1.0f);
-    // glBegin(GL_LINES);
-    // syncState<BodyState, NumIntegrState>(registry);
-    // for (int i = 0; i < steps; i++) {
-    //     syncState<NumIntegrState, TempState>(registry);
-    //     physicsUpdate(registry, dt);
-    //     for (auto entity : view) {
-    //         auto &temp = view.get<TempState>(entity);
-    //         auto &numIntegr = view.get<NumIntegrState>(entity);
-    //         Eigen::Vector3d p1 = temp.st.pos * kRenderScale;
-    //         Eigen::Vector3d p2 = numIntegr.st.pos * kRenderScale;
-    //         glVertex2d(p1.x(), p1.y());
-    //         glVertex2d(p2.x(), p2.y());
-    //     }
-    // }
-    // glEnd();
+    constexpr int n = 100;
+    auto view = registry.view<Body, KeplerParameters, RenderTrajectory>();
+    glLineWidth(1.0f);
+    std::vector<Eigen::Vector3d> points;
+    points.reserve(n);
+    for (auto entity : view) {
+        auto &body = view.get<Body>(entity);
+        if (body.primary == entt::null) continue;
+
+        auto &primaryState = registry.get<NumIntegrState>(body.primary);
+        auto &p = view.get<KeplerParameters>(entity);
+        points.clear();
+        sampleTrajectoryPoints(p, points, n);
+
+        glBegin(GL_LINE_STRIP);
+        for (const auto &pt : points) {
+            Eigen::Vector3d screenPos = (primaryState.st.pos + pt) * kRenderScale;
+            glVertex2d(screenPos.x(), screenPos.y());
+        }
+        glEnd();
+    }
 }
 
 int main() {
@@ -248,7 +249,7 @@ int main() {
         physicsUpdate(registry, dt);
         syncState<NumIntegrState, BodyState>(registry);
         render(registry);
-        // renderTrajectories(registry);
+        renderTrajectories(registry);
 
         time += dt;
         std::string formattedTime = formatDuration(std::chrono::seconds(static_cast<long long>(time)));

@@ -26,7 +26,8 @@ double stumpff_S(double z) {
     }
 }
 
-double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double &out_C, double &out_S) {
+double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
+    // Newton-Raphson iteration to solve for chi
     double chi = p.sqrt_mu * p.alpha * dt;
     for (int i = 0; i < 5; i++) {
         double z = p.alpha * chi * chi;
@@ -34,8 +35,8 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
         double S = stumpff_S(z);
         double F = p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi - p.sqrt_mu * dt;
         if (fabs(F) < 1e-6) {
-            out_C = C;
-            out_S = S;
+            if (out_C) *out_C = C;
+            if (out_S) *out_S = S;
             return chi;
         }
         double dF = p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
@@ -43,8 +44,8 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
     }
 
     double z = p.alpha * chi * chi;
-    out_C = stumpff_C(z);
-    out_S = stumpff_S(z);
+    if (out_C) *out_C = stumpff_C(z);
+    if (out_S) *out_S = stumpff_S(z);
     return chi;
 }
 
@@ -57,6 +58,24 @@ void keplerPropagate(double chi, const KeplerParameters &p, double C, double S, 
     double f_dot = p.sqrt_mu / (r.norm() * p.r0_norm) * chi * (z * S - 1.0);
     double g_dot = 1.0 - chi * chi / r.norm() * C;
     v = f_dot * p.r0 + g_dot * p.v0;
+}
+
+// Kepler propagation with unknown dt
+void keplerPropagateUnknownTime(double chi, const KeplerParameters &p, Eigen::Vector3d &r, Eigen::Vector3d *v) {
+    double z = p.alpha * chi * chi;
+    double C = stumpff_C(z);
+    double S = stumpff_S(z);
+    double f = 1 - chi * chi / p.r0_norm * C;
+    // TODO: possibly can be optimized by avoiding recalculation of dt
+    double dt = (p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi) / p.sqrt_mu;
+    double g = dt - chi * chi * chi / p.sqrt_mu * S;
+    r = f * p.r0 + g * p.v0;
+
+    if (v) {
+        double f_dot = p.sqrt_mu / (r.norm() * p.r0_norm) * chi * (z * S - 1.0);
+        double g_dot = 1.0 - chi * chi / r.norm() * C;
+        *v = f_dot * p.r0 + g_dot * p.v0;
+    }
 }
 
 } // namespace
@@ -99,12 +118,30 @@ void keplerPropagationSystem(entt::registry &registry, double dt) {
         auto &primaryState = registry.get<NumIntegrState>(body.primary);
 
         double C, S;
-        double chi = solveUniversalKeplerEquation(p, dt, C, S);
+        double chi = solveUniversalKeplerEquation(p, dt, &C, &S);
 
         Eigen::Vector3d r, v;
         keplerPropagate(chi, p, C, S, dt, r, v);
 
         state.st.pos = primaryState.st.pos + r;
         state.st.vel = primaryState.st.vel + v;
+    }
+}
+
+void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector3d> &points, int n) {
+    double chi_min = solveUniversalKeplerEquation(p, 0.0, nullptr, nullptr);
+    double chi_max = chi_min;
+    if (p.alpha > 0) {  // Elliptical orbit
+        chi_max = chi_min + 2.0 * M_PI / sqrt(p.alpha);
+    } else {  // Hyperbolic or parabolic orbit
+        chi_max = chi_min + 10.0; // Arbitrary for now
+    }
+
+    double step = (chi_max - chi_min) / (n - 1);
+    for (int i = 0; i < n; i++) {
+        double chi = chi_min + i * step;
+        Eigen::Vector3d r;
+        keplerPropagateUnknownTime(chi, p, r, nullptr);
+        points.push_back(r);
     }
 }
