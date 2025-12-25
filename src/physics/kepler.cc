@@ -48,14 +48,15 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
         double z = cbrt(3 * M_p + sqrt(1 + 9 * M_p * M_p));
         double D = z - 1.0 / z;
         chi = h / p.sqrt_mu * D;
-        chi_min = 0.0;
     } else {
         double z = p.alpha * chi_max * chi_max;
         chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z), stumpff_S(z)));
     }
-    for (int i = 0; i < 20; i++) {
     if (dt < 0.0) std::swap(chi_min, chi_max);
     chi = std::clamp(chi, chi_min, chi_max);
+
+    int i = 0;
+    for (; i < 30; i++) {
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
