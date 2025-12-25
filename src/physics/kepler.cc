@@ -32,6 +32,14 @@ double evaluateUniversalKepler(const KeplerParameters &p, double chi, double C, 
     return p.r0_norm * p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi;
 }
 
+double evaluateUniversalKeplerDerivChi(const KeplerParameters &p, double chi, double z, double C, double S) {
+    return p.r0_norm * p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
+}
+
+double evaluateUniversalKeplerSecondDerivChi(const KeplerParameters &p, double chi, double z, double C, double S) {
+    return p.r0_norm * p.r_dot / p.sqrt_mu * (1.0 - z * C) + (1.0 - p.alpha * p.r0_norm) * chi * (1.0 - z * S);
+}
+
 // Newton-Raphson iteration to solve for chi
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
     double r_peri = calculatePeriapse(p);
@@ -53,10 +61,12 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
         chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z), stumpff_S(z)));
     }
     if (dt < 0.0) std::swap(chi_min, chi_max);
+    if (std::isnan(chi)) chi = chi_min;
     chi = std::clamp(chi, chi_min, chi_max);
 
     int i = 0;
     for (; i < 30; i++) {
+        constexpr int n = 5;
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
@@ -66,8 +76,15 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
             if (out_S) *out_S = S;
             return chi;
         }
-        double dF = p.r0_norm * p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
-        double delta = F / dF;
+        double dF = evaluateUniversalKeplerDerivChi(p, chi, z, C, S);
+        double d2F = evaluateUniversalKeplerSecondDerivChi(p, chi, z, C, S);
+        double D = (n - 1) * (n - 1) * dF * dF - n * (n - 1) * F * d2F;
+        double delta;
+        if (D > 1e-7) {  // Laguerre method
+            delta = n * F / (dF + std::copysign(sqrt(D), dF));
+        } else {  // Fallback to Newton-Raphson
+            delta = F / dF;
+        }
         chi = std::clamp(chi - delta, chi_min, chi_max);  // Prevent overshoot
         if (fabs(delta / fmax(1, fabs(chi))) < 1e-12) {
             break;
