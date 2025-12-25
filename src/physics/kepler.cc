@@ -124,19 +124,18 @@ void keplerPropagationSystem(entt::registry &registry, double dt) {
 }
 
 void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector3d> &points, int n) {
-    double chi_min = solveUniversalKeplerEquation(p, 0.0, nullptr, nullptr);
-    double chi_max = chi_min;
+    double chi_max;
     if (p.alpha > 0) {  // Elliptical orbit
-        chi_max = chi_min + 2.0 * M_PI / sqrt(p.alpha);
+        chi_max = 2.0 * M_PI / sqrt(p.alpha);
     } else {  // Hyperbolic or parabolic orbit
         // For hyperbolic/parabolic orbits, chi goes to +inf. We set an arbitrary bound
         // for sampling purposes.
         chi_max = 1.0e7;
     }
 
-    double step = (chi_max - chi_min) / (n - 1);
+    double step = chi_max / (n - 1);
     for (int i = 0; i < n; i++) {
-        double chi = chi_min + i * step;
+        double chi = i * step;
         Eigen::Vector3d r;
         keplerPropagateUnknownTime(chi, p, r, nullptr);
         points.push_back(r);
