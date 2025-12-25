@@ -38,11 +38,25 @@ double evaluateUniversalKepler(const KeplerParameters &p, double chi, double C, 
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
     assert(dt > 0.0);
     double r_peri = calculatePeriapse(p);
+    double r_apo = calculateApoapse(p);
     double chi_max = p.sqrt_mu * dt / r_peri;
-    double chi_min = p.alpha > 0 ? p.sqrt_mu * dt / calculateApoapse(p) : 0.0;
-    double z0 = p.alpha * chi_max * chi_max;
-    double chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z0), stumpff_S(z0)));
-    for (int i = 0; i < 5; i++) {
+    double chi_min = p.alpha > 0 ? p.sqrt_mu * dt / r_apo : 0.0;
+    double chi;
+    if (fabs(p.e - 1.0) < 0.01) {
+        // For roughly parabolic trajectories, we obtain a better estimate by exactly solving
+        // Barker's equation.
+        // TODO: optimize this
+        double h = p.r0.cross(p.v0).norm();
+        double M_p = p.mu * p.mu * dt / (h * h * h);
+        double z = cbrt(3 * M_p + sqrt(1 + 9 * M_p * M_p));
+        double D = z - 1.0 / z;
+        chi = h / p.sqrt_mu * D;
+        chi_min = 0.0;
+    } else {
+        double z = p.alpha * chi_max * chi_max;
+        chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z), stumpff_S(z)));
+    }
+    for (int i = 0; i < 20; i++) {
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
