@@ -8,7 +8,7 @@ set_property(TARGET relativistic_sfs PROPERTY CXX_STANDARD 17)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(relativistic_sfs PRIVATE -O0 -g -march=native -fno-rtti)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(relativistic_sfs PRIVATE -Ofast -DNDEBUG -march=native -flto=auto -fno-rtti)
+    target_compile_options(relativistic_sfs PRIVATE -O3 -DNDEBUG -march=native -flto=auto -fno-rtti)
 endif()
 
 find_package(glfw3 3.4 REQUIRED)
