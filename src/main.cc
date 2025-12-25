@@ -11,22 +11,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-struct PhysicsState {
-    Eigen::Vector3d pos;
-    Eigen::Vector3d vel;
-};
-
-struct ForceAccumulator {
-    Eigen::Vector3d force;
-};
-
-struct Body {
-    double mass;
-};
-
-struct NumIntegrState { PhysicsState st; };
-struct BodyState { PhysicsState st; };
-struct TempState { PhysicsState st; };
+#include "physics/physics.h"
 
 struct RenderDotLarge { };
 struct RenderDotSmall { };
@@ -64,59 +49,6 @@ std::string formatDuration(std::chrono::seconds duration)
     return result;
 }
 
-void gravitySystem(entt::registry &registry) {
-    constexpr double G = 6.67430e-11;
-
-    auto view1 = registry.view<NumIntegrState, Body>();
-    auto view2 = registry.view<ForceAccumulator, NumIntegrState, Body>();
-
-    for (auto a : view1) {
-        auto &physA = view1.get<NumIntegrState>(a);
-        auto &bodyA = view1.get<Body>(a);
-        for (auto b : view2) {
-            if (a == b) continue;
-
-            auto &physB = view2.get<NumIntegrState>(b);
-            auto &bodyB = view2.get<Body>(b);
-            auto &forceAcc = view2.get<ForceAccumulator>(b);
-
-            Eigen::Vector3d r = physB.st.pos - physA.st.pos;
-            double norm = r.norm();
-            if (norm < 1e6) continue; // Avoid singularity
-
-            forceAcc.force -= G * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
-        }
-    }
-}
-
-void physicsUpdate(entt::registry &registry, double dt) {
-    auto forcesView = registry.view<ForceAccumulator, NumIntegrState, Body>();
-    for (auto entity : forcesView) {
-        auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
-        forceAcc.force.setZero();
-    }
-
-    gravitySystem(registry);
-
-    for (auto entity : forcesView) {
-        auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
-        auto &physics = forcesView.get<NumIntegrState>(entity);
-        auto &body = forcesView.get<Body>(entity);
-        physics.st.vel += dt * forceAcc.force / body.mass;
-        physics.st.pos += dt * physics.st.vel;
-    }
-}
-
-template<typename From, typename To>
-void syncState(entt::registry &registry) {
-    auto view = registry.view<From, To>();
-    for (auto entity : view) {
-        auto &from = view.template get<From>(entity);
-        auto &to = view.template get<To>(entity);
-        to.st = from.st;
-    }
-}
-
 constexpr double kRenderScale = 1.0 / 1.0e12;
 void render(entt::registry &registry) {
     auto largeView = registry.view<BodyState, RenderDotLarge>();
@@ -141,26 +73,26 @@ void render(entt::registry &registry) {
 }
 
 void renderTrajectories(entt::registry &registry) {
-    constexpr double dt = 1.0e5;
-    constexpr int steps = 15;
-
-    auto view = registry.view<BodyState, NumIntegrState, TempState, RenderTrajectory>();
-    glLineWidth(1.0f);
-    glBegin(GL_LINES);
-    syncState<BodyState, NumIntegrState>(registry);
-    for (int i = 0; i < steps; i++) {
-        syncState<NumIntegrState, TempState>(registry);
-        physicsUpdate(registry, dt);
-        for (auto entity : view) {
-            auto &temp = view.get<TempState>(entity);
-            auto &numIntegr = view.get<NumIntegrState>(entity);
-            Eigen::Vector3d p1 = temp.st.pos * kRenderScale;
-            Eigen::Vector3d p2 = numIntegr.st.pos * kRenderScale;
-            glVertex2d(p1.x(), p1.y());
-            glVertex2d(p2.x(), p2.y());
-        }
-    }
-    glEnd();
+    // constexpr double dt = 1.0e5;
+    // constexpr int steps = 15;
+    //
+    // auto view = registry.view<BodyState, NumIntegrState, TempState, RenderTrajectory>();
+    // glLineWidth(1.0f);
+    // glBegin(GL_LINES);
+    // syncState<BodyState, NumIntegrState>(registry);
+    // for (int i = 0; i < steps; i++) {
+    //     syncState<NumIntegrState, TempState>(registry);
+    //     physicsUpdate(registry, dt);
+    //     for (auto entity : view) {
+    //         auto &temp = view.get<TempState>(entity);
+    //         auto &numIntegr = view.get<NumIntegrState>(entity);
+    //         Eigen::Vector3d p1 = temp.st.pos * kRenderScale;
+    //         Eigen::Vector3d p2 = numIntegr.st.pos * kRenderScale;
+    //         glVertex2d(p1.x(), p1.y());
+    //         glVertex2d(p2.x(), p2.y());
+    //     }
+    // }
+    // glEnd();
 }
 
 int main() {
@@ -224,59 +156,59 @@ int main() {
     entt::registry registry;
     auto sun = registry.create();
     registry.emplace<BodyState>(sun, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d::Zero());
-    registry.emplace<Body>(sun, 1.989e30);
+    registry.emplace<Body>(sun, entt::null, 1.989e30);
     registry.emplace<RenderDotLarge>(sun);
 
     auto mercury = registry.create();
     registry.emplace<BodyState>(mercury, Eigen::Vector3d(57.9e9, 0, 0), Eigen::Vector3d(0, 47870, 0));
-    registry.emplace<Body>(mercury, 3.3011e23);
+    registry.emplace<Body>(mercury, sun, 3.3011e23);
     registry.emplace<RenderDotLarge>(mercury);
     registry.emplace<RenderTrajectory>(mercury);
 
     auto venus = registry.create();
     registry.emplace<BodyState>(venus, Eigen::Vector3d(108.2e9, 0, 0), Eigen::Vector3d(0, 35020, 0));
-    registry.emplace<Body>(venus, 4.8675e24);
+    registry.emplace<Body>(venus, sun, 4.8675e24);
     registry.emplace<RenderDotLarge>(venus);
     registry.emplace<RenderTrajectory>(venus);
 
     auto earth = registry.create();
     registry.emplace<BodyState>(earth, Eigen::Vector3d(149.6e9, 0, 0), Eigen::Vector3d(0, 29784.8, 0));
-    registry.emplace<Body>(earth, 5.972e24);
+    registry.emplace<Body>(earth, sun, 5.972e24);
     registry.emplace<RenderDotLarge>(earth);
     registry.emplace<RenderTrajectory>(earth);
 
     auto mars = registry.create();
     registry.emplace<BodyState>(mars, Eigen::Vector3d(227.9e9, 0, 0), Eigen::Vector3d(0, 24077, 0));
-    registry.emplace<Body>(mars, 6.4171e23);
+    registry.emplace<Body>(mars, sun, 6.4171e23);
     registry.emplace<RenderDotLarge>(mars);
     registry.emplace<RenderTrajectory>(mars);
 
     auto jupiter = registry.create();
     registry.emplace<BodyState>(jupiter, Eigen::Vector3d(778.5e9, 0, 0), Eigen::Vector3d(0, 13070, 0));
-    registry.emplace<Body>(jupiter, 1.8982e27);
+    registry.emplace<Body>(jupiter, sun, 1.8982e27);
     registry.emplace<RenderDotLarge>(jupiter);
     registry.emplace<RenderTrajectory>(jupiter);
 
     // Create asteroids
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distanceDistribution(300.0e9, 500.0e9);
-    std::uniform_real_distribution<double> speedDistribution(15000.0, 25000.0);
-    std::uniform_real_distribution<double> angleDistribution(0.0, 2.0 * M_PI);
-    std::uniform_real_distribution<double> massDistribution(1.0e15, 1.0e20);
-    for (int i = 0; i < 100; i++) {
-        double distance = distanceDistribution(generator);
-        double speed = speedDistribution(generator);
-        double angle = angleDistribution(generator);
-        double mass = massDistribution(generator);
-
-        Eigen::Vector3d position(distance * cos(angle), distance * sin(angle), 0);
-        Eigen::Vector3d velocity(-speed * sin(angle), speed * cos(angle), 0);
-
-        auto asteroid = registry.create();
-        registry.emplace<BodyState>(asteroid, position, velocity);
-        registry.emplace<Body>(asteroid, mass);
-        registry.emplace<RenderDotSmall>(asteroid);
-    }
+    // std::default_random_engine generator;
+    // std::uniform_real_distribution<double> distanceDistribution(300.0e9, 500.0e9);
+    // std::uniform_real_distribution<double> speedDistribution(15000.0, 25000.0);
+    // std::uniform_real_distribution<double> angleDistribution(0.0, 2.0 * M_PI);
+    // std::uniform_real_distribution<double> massDistribution(1.0e15, 1.0e20);
+    // for (int i = 0; i < 100; i++) {
+    //     double distance = distanceDistribution(generator);
+    //     double speed = speedDistribution(generator);
+    //     double angle = angleDistribution(generator);
+    //     double mass = massDistribution(generator);
+    //
+    //     Eigen::Vector3d position(distance * cos(angle), distance * sin(angle), 0);
+    //     Eigen::Vector3d velocity(-speed * sin(angle), speed * cos(angle), 0);
+    //
+    //     auto asteroid = registry.create();
+    //     registry.emplace<BodyState>(asteroid, position, velocity);
+    //     registry.emplace<Body>(asteroid, sun, mass);
+    //     registry.emplace<RenderDotSmall>(asteroid);
+    // }
 
     for (auto entity : registry.view<RenderTrajectory>()) {
         registry.emplace<TempState>(entity);
@@ -312,7 +244,7 @@ int main() {
         physicsUpdate(registry, dt);
         syncState<NumIntegrState, BodyState>(registry);
         render(registry);
-        renderTrajectories(registry);
+        // renderTrajectories(registry);
 
         time += dt;
         std::string formattedTime = formatDuration(std::chrono::seconds(static_cast<long long>(time)));

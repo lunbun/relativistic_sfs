@@ -1,4 +1,3 @@
-add_subdirectory(physics)
-
 target_sources(relativistic_sfs PRIVATE
-    main.cc)
+        physics.cc
+        physics.h)
