@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(relativistic_sfs)
 
-add_executable(relativistic_sfs src/main.cc)
+add_executable(relativistic_sfs)
 
 set_property(TARGET relativistic_sfs PROPERTY CXX_STANDARD 17)
 
@@ -18,6 +18,6 @@ target_include_directories(relativistic_sfs PRIVATE
 
 add_subdirectory(lib)
 
-target_link_libraries(relativistic_sfs glfw glad imgui)
+target_link_libraries(relativistic_sfs Eigen3::Eigen EnTT::EnTT glfw glad imgui)
 
 add_subdirectory(src)

@@ -1,3 +1,9 @@
 [submodule "lib/external/imgui"]
 	path = lib/external/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "lib/external/entt"]
+	path = lib/external/entt
+	url = https://github.com/skypjack/entt.git
+[submodule "lib/external/eigen"]
+	path = lib/external/eigen
+	url = https://gitlab.com/libeigen/eigen.git
