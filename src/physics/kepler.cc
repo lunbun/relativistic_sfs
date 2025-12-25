@@ -86,7 +86,7 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
             delta = F / dF;
         }
         chi = std::clamp(chi - delta, chi_min, chi_max);  // Prevent overshoot
-        if (fabs(delta / fmax(1, fabs(chi))) < 1e-12) {
+        if (fabs(delta / std::max(1.0, fabs(chi))) < 1e-12) {
             break;
         }
     }
