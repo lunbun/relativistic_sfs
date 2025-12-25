@@ -29,7 +29,7 @@ double stumpff_S(double z) {
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
     // Newton-Raphson iteration to solve for chi
     double chi = p.sqrt_mu * p.alpha * dt;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 5; i++) {
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
@@ -56,8 +56,9 @@ void keplerPropagate(double chi, const KeplerParameters &p, double C, double S, 
     r = f * p.r0 + g * p.v0;
 
     if (v) {
-        double f_dot = p.sqrt_mu / (r.norm() * p.r0_norm) * chi * (z * S - 1.0);
-        double g_dot = 1.0 - chi * chi / r.norm() * C;
+        double r_norm = r.norm();
+        double f_dot = p.sqrt_mu / (r_norm * p.r0_norm) * chi * (z * S - 1.0);
+        double g_dot = 1.0 - chi * chi / r_norm * C;
         *v = f_dot * p.r0 + g_dot * p.v0;
     }
 }
