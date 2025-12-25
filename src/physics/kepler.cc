@@ -33,10 +33,7 @@ double evaluateUniversalKepler(const KeplerParameters &p, double chi, double C, 
 }
 
 // Newton-Raphson iteration to solve for chi
-//
-// NB: Does not handle dt < 0, as chi bounds will be swapped. If dt = 0 then solution is chi = 0.
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
-    assert(dt > 0.0);
     double r_peri = calculatePeriapse(p);
     double r_apo = calculateApoapse(p);
     double chi_max = p.sqrt_mu * dt / r_peri;
@@ -57,6 +54,8 @@ double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double
         chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z), stumpff_S(z)));
     }
     for (int i = 0; i < 20; i++) {
+    if (dt < 0.0) std::swap(chi_min, chi_max);
+    chi = std::clamp(chi, chi_min, chi_max);
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
