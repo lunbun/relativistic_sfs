@@ -1,6 +1,8 @@
 #include "kepler.h"
 
+#include <iostream>
 #include <cmath>
+#include <cassert>
 
 #include "physics/physics.h"
 
@@ -26,21 +28,32 @@ double stumpff_S(double z) {
     }
 }
 
+double evaluateUniversalKepler(const KeplerParameters &p, double chi, double C, double S) {
+    return p.r0_norm * p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi;
+}
+
+// Newton-Raphson iteration to solve for chi
+//
+// NB: Does not handle dt < 0, as chi bounds will be swapped. If dt = 0 then solution is chi = 0.
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
-    // Newton-Raphson iteration to solve for chi
-    double chi = p.sqrt_mu * p.alpha * dt;
+    assert(dt > 0.0);
+    double r_peri = calculatePeriapse(p);
+    double chi_max = p.sqrt_mu * dt / r_peri;
+    double chi_min = p.alpha > 0 ? p.sqrt_mu * dt / calculateApoapse(p) : 0.0;
+    double z0 = p.alpha * chi_max * chi_max;
+    double chi = p.mu * dt * dt / (r_peri * evaluateUniversalKepler(p, chi_max, stumpff_C(z0), stumpff_S(z0)));
     for (int i = 0; i < 5; i++) {
         double z = p.alpha * chi * chi;
         double C = stumpff_C(z);
         double S = stumpff_S(z);
-        double F = p.r0_norm * p.r_dot / p.sqrt_mu * chi * chi * C + (1.0 - p.alpha * p.r0_norm) * chi * chi * chi * S + p.r0_norm * chi - p.sqrt_mu * dt;
+        double F = evaluateUniversalKepler(p, chi, C, S) - p.sqrt_mu * dt;
         if (fabs(F) < 1e-7) {
             if (out_C) *out_C = C;
             if (out_S) *out_S = S;
             return chi;
         }
         double dF = p.r0_norm * p.r_dot / p.sqrt_mu * chi * (1.0 - z * S) + (1.0 - p.alpha * p.r0_norm) * chi * chi * C + p.r0_norm;
-        chi = chi - F / dF;
+        chi = std::clamp(chi - F / dF, chi_min, chi_max);  // Prevent overshoot
     }
 
     double z = p.alpha * chi * chi;
@@ -75,6 +88,25 @@ void keplerPropagateUnknownTime(double chi, const KeplerParameters &p, Eigen::Ve
 
 } // namespace
 
+double calculatePeriapse(const KeplerParameters &p) {
+    if (p.alpha > 0) {
+        return (1.0 - p.e) / p.alpha;
+    } else if (p.alpha < 0) {
+        return (p.e - 1.0) / -p.alpha;
+    } else {
+        // Parabolic orbit
+        return p.r0.cross(p.v0).squaredNorm() / (2.0 * p.sqrt_mu * p.sqrt_mu);
+    }
+}
+
+double calculateApoapse(const KeplerParameters &p) {
+    if (p.alpha > 0) {
+        return (1.0 + p.e) / p.alpha;
+    } else {
+        return INFINITY;  // No apoapse for hyperbolic or parabolic orbits
+    }
+}
+
 // TODO: Technically, we do not have to recalculate parameters if no external forces are applied
 //  It is also better to avoid recalculation if no external forces occur since
 //  numerical errors can accumulate in alpha (the specific orbital energy) over
@@ -96,9 +128,10 @@ void recalculateAllKeplerParameters(entt::registry &registry) {
         double r0_norm = r0.norm();
         double alpha = 2.0 / r0_norm - v0.squaredNorm() / mu;
         double r_dot = r0.dot(v0) / r0_norm;
+        double e = sqrt(1 - r0.cross(v0).squaredNorm() * alpha / mu);
 
         view.get<KeplerParameters>(entity) =
-                KeplerParameters{ .r0 = r0, .v0 = v0, .sqrt_mu = sqrt(mu), .r0_norm = r0_norm, .alpha = alpha, .r_dot = r_dot };
+                KeplerParameters{ .r0 = r0, .v0 = v0, .sqrt_mu = sqrt(mu), .r0_norm = r0_norm, .alpha = alpha, .r_dot = r_dot, .e = e, .mu = mu };
     }
 }
 

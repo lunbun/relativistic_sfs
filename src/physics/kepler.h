@@ -12,7 +12,12 @@ struct KeplerParameters {
     double r0_norm;
     double alpha;
     double r_dot;
+    double e;
+    double mu;
 };
+
+double calculatePeriapse(const KeplerParameters &p);
+double calculateApoapse(const KeplerParameters &p);
 
 void recalculateAllKeplerParameters(entt::registry &registry);
 void keplerPropagationSystem(entt::registry &registry, double dt);
