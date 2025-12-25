@@ -4,26 +4,57 @@
 
 #include "physics/kepler.h"
 
+namespace {
+
 void gravitySystem(entt::registry &registry) {
-    auto view1 = registry.view<NumIntegrState, Body>();
-    auto view2 = registry.view<ForceAccumulator, NumIntegrState, Body>();
+    auto view1 = registry.view<ForceAccumulator, NumIntegrState, Body>();
+    auto view2 = registry.view<NumIntegrState, Body>();
     for (auto a : view1) {
-        auto &physA = view1.get<NumIntegrState>(a);
+        auto &stateA = view1.get<NumIntegrState>(a);
         auto &bodyA = view1.get<Body>(a);
+        auto &forceAcc = view1.get<ForceAccumulator>(a);
+
+        // We use primary gravity to track the strongest gravitational influence.
+        // If there is a stronger influence than the current primary, we change the
+        // primary to that body.
+        Eigen::Vector3d primaryGravity = Eigen::Vector3d::Zero();
+        if (bodyA.primary != entt::null) {
+            auto &state = registry.get<NumIntegrState>(bodyA.primary);
+            auto &body = registry.get<Body>(bodyA.primary);
+            Eigen::Vector3d r = state.st.pos - stateA.st.pos;
+            double norm = r.norm();
+            primaryGravity = kGravitationalConstant * bodyA.mass * body.mass * r / (norm * norm * norm);
+        }
+
         for (auto b : view2) {
             if (a == b) continue;
-            auto &physB = view2.get<NumIntegrState>(b);
+            auto &stateB = view2.get<NumIntegrState>(b);
             auto &bodyB = view2.get<Body>(b);
-            auto &forceAcc = view2.get<ForceAccumulator>(b);
+            if (b == bodyA.primary) continue; // Primary's gravity is handled by kepler propagation
 
-            if (a == bodyB.primary) continue; // Primary's gravity is handled by kepler propagation
-            Eigen::Vector3d r = physB.st.pos - physA.st.pos;
+            Eigen::Vector3d r = stateB.st.pos - stateA.st.pos;
             double norm = r.norm();
             if (norm < 1e6) continue; // Avoid singularity
-            forceAcc.force -= 50 * kGravitationalConstant * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
+
+            Eigen::Vector3d gravity = kGravitationalConstant * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
+            if (gravity.squaredNorm() < primaryGravity.squaredNorm()) {
+                forceAcc.force += gravity;
+            } else {
+                // Apply old primary's gravity, as Kepler no longer handles it
+                if (bodyA.primary != entt::null) {
+                    forceAcc.force += primaryGravity;
+                }
+
+                // Do not apply capturer's gravitational force if we capture since Kepler
+                // propagation will handle it.
+                primaryGravity = gravity;
+                bodyA.primary = b;
+            }
         }
     }
 }
+
+} // namespace
 
 void physicsUpdate(entt::registry &registry, double dt) {
     auto forcesView = registry.view<ForceAccumulator, NumIntegrState, Body>();
@@ -37,14 +68,12 @@ void physicsUpdate(entt::registry &registry, double dt) {
     // Kick momentum update
     for (auto entity : forcesView) {
         auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
-        auto &physics = forcesView.get<NumIntegrState>(entity);
+        auto &state = forcesView.get<NumIntegrState>(entity);
         auto &body = forcesView.get<Body>(entity);
-        physics.st.vel += dt * forceAcc.force / body.mass;
+        state.st.vel += dt * forceAcc.force / body.mass;
     }
 
     // Kepler drift
     recalculateAllKeplerParameters(registry);
     keplerPropagationSystem(registry, dt);
 }
-
-
