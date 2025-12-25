@@ -9,22 +9,22 @@
 namespace {
 
 double stumpff_C(double z) {
-    if (z > 0) {
+    if (z > 1e-7) {
         return (1 - cos(sqrt(z))) / z;
-    } else if (z < 0) {
+    } else if (z < -1e-7) {
         return (cosh(sqrt(-z)) - 1) / -z;
     } else {
-        return 0.5;
+        return 0.5 - z / 24 + z * z / 720;
     }
 }
 
 double stumpff_S(double z) {
-    if (z > 0) {
+    if (z > 1e-7) {
         return (sqrt(z) - sin(sqrt(z))) / (z * sqrt(z));
-    } else if (z < 0) {
+    } else if (z < -1e-7) {
         return (sinh(sqrt(-z)) - sqrt(-z)) / (-z * sqrt(-z));
     } else {
-        return 1.0 / 6.0;
+        return 1.0 / 6.0 - z / 120 + z * z / 5040;
     }
 }
 
