@@ -128,7 +128,9 @@ void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector
     if (p.alpha > 0) {  // Elliptical orbit
         chi_max = chi_min + 2.0 * M_PI / sqrt(p.alpha);
     } else {  // Hyperbolic or parabolic orbit
-        chi_max = chi_min + 10.0; // Arbitrary for now
+        // For hyperbolic/parabolic orbits, chi goes to +inf. We set an arbitrary bound
+        // for sampling purposes.
+        chi_max = 1.0e7;
     }
 
     double step = (chi_max - chi_min) / (n - 1);
