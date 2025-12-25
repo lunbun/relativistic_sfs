@@ -2,6 +2,7 @@
 #include <chrono>
 #include <random>
 
+// clang-format off
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 #include <glad/gl.h>
@@ -10,7 +11,9 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+// clang-format on
 
+#include "physics/kepler.h"
 #include "physics/physics.h"
 
 struct RenderDotLarge { };
@@ -216,6 +219,7 @@ int main() {
 
     for (auto entity : registry.view<BodyState>()) {
         registry.emplace<NumIntegrState>(entity);
+        registry.emplace<KeplerParameters>(entity);
         if (entity != sun) registry.emplace<ForceAccumulator>(entity);
     }
 

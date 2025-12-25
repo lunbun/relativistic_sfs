@@ -3,6 +3,8 @@
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 
+constexpr double kGravitationalConstant = 6.67430e-11;
+
 struct PhysicsState {
     Eigen::Vector3d pos;
     Eigen::Vector3d vel;
