@@ -4,8 +4,6 @@
 
 #include "physics/kepler.h"
 
-constexpr double G = 6.67430e-11;
-
 void gravitySystem(entt::registry &registry) {
     auto view1 = registry.view<NumIntegrState, Body>();
     auto view2 = registry.view<ForceAccumulator, NumIntegrState, Body>();
@@ -17,33 +15,36 @@ void gravitySystem(entt::registry &registry) {
             auto &physB = view2.get<NumIntegrState>(b);
             auto &bodyB = view2.get<Body>(b);
             auto &forceAcc = view2.get<ForceAccumulator>(b);
+
+            if (a == bodyB.primary) continue; // Primary's gravity is handled by kepler propagation
             Eigen::Vector3d r = physB.st.pos - physA.st.pos;
             double norm = r.norm();
             if (norm < 1e6) continue; // Avoid singularity
-            forceAcc.force -= G * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
+            forceAcc.force -= 50 * kGravitationalConstant * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
         }
     }
 }
 
 void physicsUpdate(entt::registry &registry, double dt) {
-    // auto forcesView = registry.view<ForceAccumulator, NumIntegrState, Body>();
-    // for (auto entity : forcesView) {
-    //     auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
-    //     forceAcc.force.setZero();
-    // }
+    auto forcesView = registry.view<ForceAccumulator, NumIntegrState, Body>();
+    for (auto entity : forcesView) {
+        auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
+        forceAcc.force.setZero();
+    }
 
-    // gravitySystem(registry);
+    gravitySystem(registry);
+
+    // Kick momentum update
+    for (auto entity : forcesView) {
+        auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
+        auto &physics = forcesView.get<NumIntegrState>(entity);
+        auto &body = forcesView.get<Body>(entity);
+        physics.st.vel += dt * forceAcc.force / body.mass;
+    }
+
+    // Kepler drift
     recalculateAllKeplerParameters(registry);
     keplerPropagationSystem(registry, dt);
-
-    // TODO: kick propagation system
-    // for (auto entity : forcesView) {
-    //     auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
-    //     auto &physics = forcesView.get<NumIntegrState>(entity);
-    //     auto &body = forcesView.get<Body>(entity);
-    //     physics.st.vel += dt * forceAcc.force / body.mass;
-    //     physics.st.pos += dt * physics.st.vel;
-    // }
 }
 
 
