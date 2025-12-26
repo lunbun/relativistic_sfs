@@ -40,7 +40,7 @@ double evaluateUniversalKeplerSecondDerivChi(const KeplerParameters &p, double c
     return p.r0_norm * p.r_dot / p.sqrt_mu * (1.0 - z * C) + (1.0 - p.alpha * p.r0_norm) * chi * (1.0 - z * S);
 }
 
-// Newton-Raphson iteration to solve for chi
+// Laguerre / Newton-Raphson iteration to solve for chi
 double solveUniversalKeplerEquation(const KeplerParameters &p, double dt, double *out_C, double *out_S) {
     double r_peri = calculatePeriapse(p);
     double r_apo = calculateApoapse(p);
@@ -147,13 +147,13 @@ double calculateApoapse(const KeplerParameters &p) {
 //  numerical errors can accumulate in alpha (the specific orbital energy) over
 //  time otherwise.
 void recalculateAllKeplerParameters(entt::registry &registry) {
-    auto view = registry.view<NumIntegrState, Body, KeplerParameters>();
+    auto view = registry.view<BodyState, Body, KeplerParameters>();
     for (auto entity : view) {
         auto &body = view.get<Body>(entity);
         if (body.primary == entt::null) continue;
 
-        auto &state = view.get<NumIntegrState>(entity);
-        auto &primaryState = registry.get<NumIntegrState>(body.primary);
+        auto &state = view.get<BodyState>(entity);
+        auto &primaryState = registry.get<BodyState>(body.primary);
         auto &primaryBody = registry.get<Body>(body.primary);
 
         Eigen::Vector3d r0 = state.st.pos - primaryState.st.pos;
@@ -171,14 +171,14 @@ void recalculateAllKeplerParameters(entt::registry &registry) {
 }
 
 void keplerPropagationSystem(entt::registry &registry, double dt) {
-    auto view = registry.view<NumIntegrState, Body, KeplerParameters>();
+    auto view = registry.view<BodyState, Body, KeplerParameters>();
     for (auto entity : view) {
         auto &body = view.get<Body>(entity);
         if (body.primary == entt::null) continue;
 
-        auto &state = view.get<NumIntegrState>(entity);
+        auto &state = view.get<BodyState>(entity);
         auto &p = view.get<KeplerParameters>(entity);
-        auto &primaryState = registry.get<NumIntegrState>(body.primary);
+        auto &primaryState = registry.get<BodyState>(body.primary);
 
         double C, S;
         double chi = solveUniversalKeplerEquation(p, dt, &C, &S);

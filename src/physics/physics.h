@@ -19,9 +19,7 @@ struct Body {
     double mass;
 };
 
-struct NumIntegrState { PhysicsState st; };
 struct BodyState { PhysicsState st; };
-struct TempState { PhysicsState st; };
 
 void physicsUpdate(entt::registry &registry, double dt);
 
