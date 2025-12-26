@@ -2,9 +2,13 @@
 
 #include <entt/entt.hpp>
 
-struct RenderDotLarge { };
-struct RenderDotSmall { };
+#include "render/camera.h"
+
+struct RenderDot {
+    float size;
+};
 struct RenderTrajectory { };
 
-void renderBodies(entt::registry &registry);
-void renderTrajectories(entt::registry &registry);
+void initRenderBodySystem();
+void renderBodies(entt::registry &registry, entt::entity camera);
+void renderTrajectories(entt::registry &registry, entt::entity camera);

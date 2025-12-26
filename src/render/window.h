@@ -18,7 +18,13 @@ public:
     MainWindow(GLFWwindow* window);
     ~MainWindow();
 
+    void initImGui();
+
+    GLFWwindow *handle() const { return window_; }
+    int width() const;
+    int height() const;
     bool shouldClose() const;
+
     void startFrame();
     void endFrame();
 

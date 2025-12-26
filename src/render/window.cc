@@ -13,16 +13,16 @@
 #include <backends/imgui_impl_opengl3.h>
 // clang-format on
 
-std::unique_ptr<MainWindow> MainWindow::create() {
-    constexpr int WIDTH = 1600;
-    constexpr int HEIGHT = 1200;
+constexpr int WIDTH = 1600;
+constexpr int HEIGHT = 1200;
 
+std::unique_ptr<MainWindow> MainWindow::create() {
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
@@ -51,18 +51,6 @@ std::unique_ptr<MainWindow> MainWindow::create() {
     // Define the viewport dimensions
     glViewport(0, 0, WIDTH, HEIGHT);
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-    io.FontGlobalScale = 2.0f;
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
-    ImGui_ImplOpenGL3_Init();
-
     return std::make_unique<MainWindow>(window);
 }
 
@@ -76,6 +64,28 @@ MainWindow::~MainWindow() {
 
     // Terminates GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
+}
+
+void MainWindow::initImGui() {
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.FontGlobalScale = 2.0f;
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window_, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplOpenGL3_Init();
+}
+
+int MainWindow::width() const {
+    return WIDTH;
+}
+
+int MainWindow::height() const {
+    return HEIGHT;
 }
 
 bool MainWindow::shouldClose() const {
