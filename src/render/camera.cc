@@ -95,7 +95,8 @@ void initCameraGLFWCallbacks(const MainWindow &window) {
 
 void updateCameras(entt::registry &registry, const MainWindow &window, double dt) {
     // TODO: less sus focus cycling
-    entt::entity focus = static_cast<entt::entity>((focusIndex % 6 + 6) % 6);
+    constexpr int numCycle = 11;
+    entt::entity focus = static_cast<entt::entity>((focusIndex % numCycle + numCycle) % numCycle);
 
     constexpr double kRotationSpeed = 2.8; // radians per second
     double dyaw = 0.0;
