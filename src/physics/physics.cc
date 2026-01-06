@@ -54,9 +54,7 @@ void gravitySystem(entt::registry &registry) {
     }
 }
 
-} // namespace
-
-void physicsUpdate(entt::registry &registry, double dt) {
+void momentumKick(entt::registry &registry, double dt) {
     auto forcesView = registry.view<ForceAccumulator, BodyState, Body>();
     for (auto entity : forcesView) {
         auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
@@ -65,17 +63,24 @@ void physicsUpdate(entt::registry &registry, double dt) {
 
     gravitySystem(registry);
 
-    // Kick momentum update
     for (auto entity : forcesView) {
         auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
         auto &state = forcesView.get<BodyState>(entity);
         auto &body = forcesView.get<Body>(entity);
-        state.st.vel += dt * forceAcc.force / body.mass;
+        state.st.vel += 0.5 * dt * forceAcc.force / body.mass;
     }
+}
 
-    // Kepler drift
+} // namespace
+
+void physicsUpdate(entt::registry &registry, double dt) {
+    // Kick-drift-kick integrator
+    momentumKick(registry, dt * 0.5);
+
     recalculateAllKeplerParameters(registry);
     keplerPropagationSystem(registry, dt);
+
+    momentumKick(registry, dt * 0.5);
 }
 
 void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com, double &energy, Eigen::Vector3d &momentum, Eigen::Vector3d &angularMomentum) {
