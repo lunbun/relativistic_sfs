@@ -14,42 +14,45 @@ void gravitySystem(entt::registry &registry) {
         auto &bodyA = view1.get<Body>(a);
         auto &forceAcc = view1.get<ForceAccumulator>(a);
 
+        Eigen::Vector3d posA = calculateAbsolutePosition(registry, stateA);
+
         // We use primary gravity to track the strongest gravitational influence.
         // If there is a stronger influence than the current primary, we change the
         // primary to that body.
-        Eigen::Vector3d primaryGravity = Eigen::Vector3d::Zero();
-        if (bodyA.primary != entt::null) {
-            auto &state = registry.get<BodyState>(bodyA.primary);
-            auto &body = registry.get<Body>(bodyA.primary);
-            Eigen::Vector3d r = state.st.pos - stateA.st.pos;
-            double norm = r.norm();
-            primaryGravity = kGravitationalConstant * bodyA.mass * body.mass * r / (norm * norm * norm);
-        }
+        // TODO: reimplement this
+        // Eigen::Vector3d primaryGravity = Eigen::Vector3d::Zero();
+        // if (bodyA.primary != entt::null) {
+        //     auto &state = registry.get<BodyState>(bodyA.primary);
+        //     auto &body = registry.get<Body>(bodyA.primary);
+        //     Eigen::Vector3d r = state.st.pos - stateA.st.pos;
+        //     double norm = r.norm();
+        //     primaryGravity = kGravitationalConstant * bodyA.mass * body.mass * r / (norm * norm * norm);
+        // }
 
         for (auto b : view2) {
             if (a == b) continue;
             auto &stateB = view2.get<BodyState>(b);
             auto &bodyB = view2.get<Body>(b);
-            if (b == bodyA.primary) continue; // Primary's gravity is handled by kepler propagation
+            if (isParentBody<BodyState>(registry, a, b)) continue; // Parents' gravity is handled by Kepler propagation or Jacobi coordinates
 
-            Eigen::Vector3d r = stateB.st.pos - stateA.st.pos;
+            Eigen::Vector3d r = calculateAbsolutePosition(registry, stateB) - posA;
             double norm = r.norm();
             if (norm < 1e6) continue; // Avoid singularity
 
             Eigen::Vector3d gravity = kGravitationalConstant * bodyA.mass * bodyB.mass * r / (norm * norm * norm);
-            if (gravity.squaredNorm() < primaryGravity.squaredNorm()) {
-                forceAcc.force += gravity;
-            } else {
-                // Apply old primary's gravity, as Kepler no longer handles it
-                if (bodyA.primary != entt::null) {
-                    forceAcc.force += primaryGravity;
-                }
-
-                // Do not apply capturer's gravitational force if we capture since Kepler
-                // propagation will handle it.
-                primaryGravity = gravity;
-                bodyA.primary = b;
-            }
+            // if (gravity.squaredNorm() < primaryGravity.squaredNorm()) {
+            forceAcc.force += gravity;
+            // } else {
+            //     // Apply old primary's gravity, as Kepler no longer handles it
+            //     if (bodyA.primary != entt::null) {
+            //         forceAcc.force += primaryGravity;
+            //     }
+            //
+            //     // Do not apply capturer's gravitational force if we capture since Kepler
+            //     // propagation will handle it.
+            //     primaryGravity = gravity;
+            //     bodyA.primary = b;
+            // }
         }
     }
 }
@@ -71,16 +74,18 @@ void momentumKick(entt::registry &registry, double dt) {
     }
 }
 
+void keplerDrift(entt::registry &registry, double dt) {
+    recalculateAllKeplerParameters(registry);
+    keplerPropagationSystem(registry, dt);
+}
+
 } // namespace
 
 void physicsUpdate(entt::registry &registry, double dt) {
     // Kick-drift-kick integrator
-    momentumKick(registry, dt * 0.5);
-
-    recalculateAllKeplerParameters(registry);
-    keplerPropagationSystem(registry, dt);
-
-    momentumKick(registry, dt * 0.5);
+    momentumKick(registry, dt / 2);
+    keplerDrift(registry, dt);
+    momentumKick(registry, dt / 2);
 }
 
 void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com, double &energy, Eigen::Vector3d &momentum, Eigen::Vector3d &angularMomentum) {
@@ -91,7 +96,7 @@ void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com
         auto &state = view.get<BodyState>(entity);
         auto &body = view.get<Body>(entity);
         totalMass += body.mass;
-        com += body.mass * state.st.pos;
+        com += body.mass * calculateAbsolutePosition(registry, state);
     }
     com /= totalMass;
 
@@ -103,10 +108,13 @@ void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com
         auto &state1 = view.get<BodyState>(entity1);
         auto &body1 = view.get<Body>(entity1);
 
+        Eigen::Vector3d pos = calculateAbsolutePosition(registry, state1);
+        Eigen::Vector3d vel = calculateAbsoluteVelocity(registry, state1);
+
         // Kinetic energy and momentum
-        energy += 0.5 * body1.mass * state1.st.vel.squaredNorm();
-        momentum += body1.mass * state1.st.vel;
-        angularMomentum += body1.mass * state1.st.pos.cross(state1.st.vel);
+        energy += 0.5 * body1.mass * vel.squaredNorm();
+        momentum += body1.mass * vel;
+        angularMomentum += body1.mass * pos.cross(vel);
 
         // Potential energy
         for (auto it2 = std::next(it1); it2 != view.end(); ++it2) {
@@ -114,7 +122,7 @@ void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com
             auto &state2 = view.get<BodyState>(entity2);
             auto &body2 = view.get<Body>(entity2);
 
-            Eigen::Vector3d r = state2.st.pos - state1.st.pos;
+            Eigen::Vector3d r = calculateAbsolutePosition(registry, state2) - pos;
             double norm = r.norm();
             energy -= kGravitationalConstant * body1.mass * body2.mass / norm;
         }

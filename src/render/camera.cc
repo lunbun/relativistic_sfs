@@ -133,7 +133,7 @@ void updateCameras(entt::registry &registry, const MainWindow &window, double dt
 
         auto &targetState = registry.get<BodyState>(camera.target);
 
-        Eigen::Vector3f targetPos = targetState.st.pos.cast<float>();
+        Eigen::Vector3f targetPos = calculateAbsolutePosition(registry, targetState).cast<float>();
         float x = camera.distance * cosf(camera.pitch) * sinf(camera.yaw);
         float y = camera.distance * sinf(camera.pitch);
         float z = camera.distance * cosf(camera.pitch) * cosf(camera.yaw);

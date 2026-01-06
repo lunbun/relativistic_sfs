@@ -19,10 +19,17 @@ entt::entity createBodyFromJPL(entt::registry &registry,
     // Swap y and z components
     Eigen::Vector3d position2(position.x(), position.z(), position.y());
     Eigen::Vector3d velocity2(velocity.x(), velocity.z(), velocity.y());
+    position2 *= 1e3;
+    velocity2 *= 1e3;
+    if (parent != entt::null) {
+        const auto &parentState = registry.get<BodyState>(parent);
+        position2 -= calculateAbsolutePosition(registry, parentState);
+        velocity2 -= calculateAbsoluteVelocity(registry, parentState);
+    }
 
     auto planet = registry.create();
-    registry.emplace<BodyState>(planet, 1e3 * position2, 1e3 * velocity2);
-    registry.emplace<Body>(planet, parent, mass);
+    registry.emplace<BodyState>(planet, parent, position2, velocity2);
+    registry.emplace<Body>(planet, mass);
     registry.emplace<RenderDot>(planet, 0.02f);
     if (parent != entt::null) registry.emplace<RenderTrajectory>(planet);
     return planet;
@@ -127,8 +134,8 @@ void createSolarSystem(entt::registry &registry) {
         Eigen::Vector3d velocity(-speed * sin(angle), 0, speed * cos(angle));
 
         auto asteroid = registry.create();
-        registry.emplace<BodyState>(asteroid, position, velocity);
-        registry.emplace<Body>(asteroid, sun, mass);
+        registry.emplace<BodyState>(asteroid, sun, position, velocity);
+        registry.emplace<Body>(asteroid, mass);
         registry.emplace<RenderDot>(asteroid, 0.007f);
         // registry.emplace<RenderTrajectory>(asteroid);
     }

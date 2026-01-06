@@ -147,17 +147,15 @@ double calculateApoapse(const KeplerParameters &p) {
 //  numerical errors can accumulate in alpha (the specific orbital energy) over
 //  time otherwise.
 void recalculateAllKeplerParameters(entt::registry &registry) {
-    auto view = registry.view<BodyState, Body, KeplerParameters>();
+    auto view = registry.view<BodyState, KeplerParameters>();
     for (auto entity : view) {
-        auto &body = view.get<Body>(entity);
-        if (body.primary == entt::null) continue;
-
         auto &state = view.get<BodyState>(entity);
-        auto &primaryState = registry.get<BodyState>(body.primary);
-        auto &primaryBody = registry.get<Body>(body.primary);
+        if (state.st.primary == entt::null) continue;
 
-        Eigen::Vector3d r0 = state.st.pos - primaryState.st.pos;
-        Eigen::Vector3d v0 = state.st.vel - primaryState.st.vel;
+        auto &primaryBody = registry.get<Body>(state.st.primary);
+
+        const Eigen::Vector3d &r0 = state.st.pos;
+        const Eigen::Vector3d &v0 = state.st.vel;
 
         double mu = kGravitationalConstant * primaryBody.mass;
         double r0_norm = r0.norm();
@@ -171,14 +169,12 @@ void recalculateAllKeplerParameters(entt::registry &registry) {
 }
 
 void keplerPropagationSystem(entt::registry &registry, double dt) {
-    auto view = registry.view<BodyState, Body, KeplerParameters>();
+    auto view = registry.view<BodyState, KeplerParameters>();
     for (auto entity : view) {
-        auto &body = view.get<Body>(entity);
-        if (body.primary == entt::null) continue;
-
         auto &state = view.get<BodyState>(entity);
+        if (state.st.primary == entt::null) continue;
+
         auto &p = view.get<KeplerParameters>(entity);
-        auto &primaryState = registry.get<BodyState>(body.primary);
 
         double C, S;
         double chi = solveUniversalKeplerEquation(p, dt, &C, &S);
@@ -186,8 +182,8 @@ void keplerPropagationSystem(entt::registry &registry, double dt) {
         Eigen::Vector3d r, v;
         keplerPropagate(chi, p, C, S, dt, r, &v);
 
-        state.st.pos = primaryState.st.pos + r;
-        state.st.vel = primaryState.st.vel + v;
+        state.st.pos = r;
+        state.st.vel = v;
     }
 }
 

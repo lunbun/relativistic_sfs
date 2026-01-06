@@ -201,7 +201,10 @@ void renderBodies(entt::registry &registry, entt::entity camera) {
             lastSize = dot.size;
             glUniform1f(dot_uSizeLoc, dot.size);
         }
-        glUniform3f(dot_uPositionLoc, body.st.pos.x(), body.st.pos.y(), body.st.pos.z());
+        // TODO: to avoid floating point error, we should calculate the position
+        //  relative to the camera focus
+        Eigen::Vector3d pos = calculateAbsolutePosition(registry, body);
+        glUniform3f(dot_uPositionLoc, pos.x(), pos.y(), pos.z());
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
@@ -223,16 +226,16 @@ void renderTrajectories(entt::registry &registry, entt::entity camera) {
     glUniformMatrix4fv(dot_uProjectionLoc, 1, GL_FALSE, cameraData.projectionMatrix.data());
 
     constexpr int n = 250;
-    auto view = registry.view<Body, KeplerParameters, RenderTrajectory>();
+    auto view = registry.view<BodyState, KeplerParameters, RenderTrajectory>();
     std::vector<Eigen::Vector3d> points;
     points.reserve(n);
     std::vector<float> bufferData;
     bufferData.reserve(3 * n);
     for (auto entity : view) {
-        auto &body = view.get<Body>(entity);
-        if (body.primary == entt::null) continue;
+        auto &state = view.get<BodyState>(entity);
+        if (state.st.primary == entt::null) continue;
 
-        auto &primaryState = registry.get<BodyState>(body.primary);
+        auto &primaryState = view.get<BodyState>(state.st.primary);
         auto &p = view.get<KeplerParameters>(entity);
         points.clear();
         sampleTrajectoryPoints(p, points, n);
@@ -245,7 +248,10 @@ void renderTrajectories(entt::registry &registry, entt::entity camera) {
         }
         glBufferData(GL_ARRAY_BUFFER, bufferData.size() * sizeof(float), bufferData.data(), GL_DYNAMIC_DRAW);
 
-        glUniform3f(trajectory_uPositionLoc, primaryState.st.pos.x(), primaryState.st.pos.y(), primaryState.st.pos.z());
+        // TODO: to avoid floating point error, we should calculate the position
+        //  relative to the camera focus
+        Eigen::Vector3d primaryPos = calculateAbsolutePosition(registry, primaryState);
+        glUniform3f(trajectory_uPositionLoc, primaryPos.x(), primaryPos.y(), primaryPos.z());
         glDrawArrays(GL_LINE_STRIP, 0, points.size());
 
         // glBegin(GL_LINE_STRIP);
