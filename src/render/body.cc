@@ -13,67 +13,12 @@
 #include "render/camera.h"
 #include "render/window.h"
 
+extern const char EMBED_START_ASSETS_DOT_VERT_GLSL[];
+extern const char EMBED_START_ASSETS_DOT_FRAG_GLSL[];
+extern const char EMBED_START_ASSETS_TRAJ_VERT_GLSL[];
+extern const char EMBED_START_ASSETS_TRAJ_FRAG_GLSL[];
+
 namespace {
-
-const char *dotVertexShaderSource = R"glsl(
-#version 330 core
-
-uniform float uSize;
-uniform vec3 uPosition;
-uniform mat4 uView;
-uniform mat4 uProjection;
-
-layout(location = 0) in vec2 aPos;
-
-out vec2 fragPos;
-
-void main() {
-    fragPos = aPos;
-
-    vec4 projPos = uProjection * (uView * vec4(uPosition, 1.0));
-    gl_Position = projPos + vec4(uSize * projPos.w * aPos, 0.0, 0.0);
-}
-)glsl";
-
-const char *dotFragmentShaderSource = R"glsl(
-#version 330 core
-
-in vec2 fragPos;
-
-out vec4 FragColor;
-
-void main() {
-    float edge = 0.01;
-    float radius = 0.5 - edge;
-    float dist = length(fragPos);
-    float alpha = 1.0 - smoothstep(radius - edge, radius + edge, dist);
-    FragColor = vec4(1.0, 1.0, 1.0, alpha);
-}
-)glsl";
-
-const char *trajectoryVertexShaderSource = R"glsl(
-#version 330 core
-
-uniform vec3 uPosition;
-uniform mat4 uView;
-uniform mat4 uProjection;
-
-layout(location = 0) in vec3 aPos;
-
-void main() {
-    gl_Position = uProjection * (uView * vec4(uPosition + aPos, 1.0));
-}
-)glsl";
-
-const char *trajectoryFragmentShaderSource = R"glsl(
-#version 330 core
-
-out vec4 FragColor;
-
-void main() {
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-}
-)glsl";
 
 GLuint dotVAO, dotVBO;
 GLuint dotShaderProgram;
@@ -155,7 +100,7 @@ GLuint compileShaderProgram(const char *vertexSource, const char *fragmentSource
 }
 
 void initShaders() {
-    dotShaderProgram = compileShaderProgram(dotVertexShaderSource, dotFragmentShaderSource, "dot");
+    dotShaderProgram = compileShaderProgram(EMBED_START_ASSETS_DOT_VERT_GLSL, EMBED_START_ASSETS_DOT_FRAG_GLSL, "dot");
 
     glUseProgram(dotShaderProgram);
     dot_uSizeLoc = glGetUniformLocation(dotShaderProgram, "uSize");
@@ -164,7 +109,7 @@ void initShaders() {
     dot_uProjectionLoc = glGetUniformLocation(dotShaderProgram, "uProjection");
     glUseProgram(0);
 
-    trajectoryShaderProgram = compileShaderProgram(trajectoryVertexShaderSource, trajectoryFragmentShaderSource, "trajectory");
+    trajectoryShaderProgram = compileShaderProgram(EMBED_START_ASSETS_TRAJ_VERT_GLSL, EMBED_START_ASSETS_TRAJ_FRAG_GLSL, "trajectory");
 
     glUseProgram(trajectoryShaderProgram);
     trajectory_uPositionLoc = glGetUniformLocation(trajectoryShaderProgram, "uPosition");
