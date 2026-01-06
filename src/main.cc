@@ -51,6 +51,21 @@ int main() {
         std::string formattedTime = formatDuration(std::chrono::seconds(static_cast<long long>(time)));
         ImGui::Text("Simulated time: %s", formattedTime.c_str());
 
+        double energy;
+        Eigen::Vector3d com, momentum, angularMomentum;
+        calculateConservedQuantities(registry, com, energy, momentum, angularMomentum);
+        ImGui::Text("Center of Mass: [%.3e, %.3e, %.3e] m", com.x(), com.y(), com.z());
+        ImGui::Text("Total Energy: %.3e J", energy);
+        ImGui::Text("Total Momentum: [%.3e, %.3e, %.3e] kg·m/s", momentum.x(), momentum.y(), momentum.z());
+        ImGui::Text("Total Angular Momentum: [%.3e, %.3e, %.3e] kg·m²/s", angularMomentum.x(), angularMomentum.y(), angularMomentum.z());
+
+        entt::entity sun = static_cast<entt::entity>(0);
+        ImGui::Text("Sun Velocity: [%.3e, %.3e, %.3e] m",
+            registry.get<BodyState>(sun).st.vel.x(),
+            registry.get<BodyState>(sun).st.vel.y(),
+            registry.get<BodyState>(sun).st.vel.z()
+        );
+
         window->endFrame();
     }
     return 0;

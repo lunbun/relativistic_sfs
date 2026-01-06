@@ -134,8 +134,8 @@ void createSolarSystem(entt::registry &registry) {
     }
 
     for (auto entity : registry.view<BodyState>()) {
-        registry.emplace<KeplerParameters>(entity);
-        if (entity != sun) registry.emplace<ForceAccumulator>(entity);
+        if (entity != sun) registry.emplace<KeplerParameters>(entity);
+        registry.emplace<ForceAccumulator>(entity);
     }
 
     recalculateAllKeplerParameters(registry);

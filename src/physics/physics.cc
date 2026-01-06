@@ -77,3 +77,41 @@ void physicsUpdate(entt::registry &registry, double dt) {
     recalculateAllKeplerParameters(registry);
     keplerPropagationSystem(registry, dt);
 }
+
+void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com, double &energy, Eigen::Vector3d &momentum, Eigen::Vector3d &angularMomentum) {
+    com = Eigen::Vector3d::Zero();
+    double totalMass = 0.0;
+    auto view = registry.view<BodyState, Body>();
+    for (auto entity : view) {
+        auto &state = view.get<BodyState>(entity);
+        auto &body = view.get<Body>(entity);
+        totalMass += body.mass;
+        com += body.mass * state.st.pos;
+    }
+    com /= totalMass;
+
+    energy = 0.0;
+    momentum = Eigen::Vector3d::Zero();
+    angularMomentum = Eigen::Vector3d::Zero();
+    for (auto it1 = view.begin(); it1 != view.end(); ++it1) {
+        auto entity1 = *it1;
+        auto &state1 = view.get<BodyState>(entity1);
+        auto &body1 = view.get<Body>(entity1);
+
+        // Kinetic energy and momentum
+        energy += 0.5 * body1.mass * state1.st.vel.squaredNorm();
+        momentum += body1.mass * state1.st.vel;
+        angularMomentum += body1.mass * state1.st.pos.cross(state1.st.vel);
+
+        // Potential energy
+        for (auto it2 = std::next(it1); it2 != view.end(); ++it2) {
+            auto entity2 = *it2;
+            auto &state2 = view.get<BodyState>(entity2);
+            auto &body2 = view.get<Body>(entity2);
+
+            Eigen::Vector3d r = state2.st.pos - state1.st.pos;
+            double norm = r.norm();
+            energy -= kGravitationalConstant * body1.mass * body2.mass / norm;
+        }
+    }
+}

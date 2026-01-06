@@ -23,6 +23,8 @@ struct BodyState { PhysicsState st; };
 
 void physicsUpdate(entt::registry &registry, double dt);
 
+void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com, double &energy, Eigen::Vector3d &momentum, Eigen::Vector3d &angularMomentum);
+
 template<typename From, typename To>
 void syncState(entt::registry &registry) {
     auto view = registry.view<From, To>();
