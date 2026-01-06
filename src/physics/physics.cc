@@ -70,7 +70,7 @@ void momentumKick(entt::registry &registry, double dt) {
         auto &forceAcc = forcesView.get<ForceAccumulator>(entity);
         auto &state = forcesView.get<BodyState>(entity);
         auto &body = forcesView.get<Body>(entity);
-        state.st.vel += 0.5 * dt * forceAcc.force / body.mass;
+        state.st.vel += dt * forceAcc.force / body.mass;
     }
 }
 
@@ -99,9 +99,10 @@ void positionDrift(entt::registry &registry, double dt) {
 
 void physicsUpdate(entt::registry &registry, double dt) {
     // Kick-drift-kick integrator
-    momentumKick(registry, dt / 2);
+    // Note: For now, there is no need to do half-kicks since none of the forces
+    // depend on velocity, so full kicks are algebraically equivalent.
+    momentumKick(registry, dt);
     positionDrift(registry, dt);
-    momentumKick(registry, dt / 2);
 }
 
 void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com, double &energy, Eigen::Vector3d &momentum, Eigen::Vector3d &angularMomentum) {
