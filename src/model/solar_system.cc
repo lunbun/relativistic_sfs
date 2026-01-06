@@ -68,13 +68,14 @@ void createSolarSystem(entt::registry &registry) {
         5.97219e24,
         sun
     );
-    auto moon = createBodyFromJPL(
-        registry,
-        Eigen::Vector3d(-2.743589644230116e+07, 1.435751546419631e+08, -1.145344989768416e+04),
-        Eigen::Vector3d(-2.884424012475249e+01, -5.089320873036412e+00, 3.814177365090332e-02),
-        7.349e22,
-        earth
-    );
+    // TODO: moon will need tidal forces
+    // auto moon = createBodyFromJPL(
+    //     registry,
+    //     Eigen::Vector3d(-2.743589644230116e+07, 1.435751546419631e+08, -1.145344989768416e+04),
+    //     Eigen::Vector3d(-2.884424012475249e+01, -5.089320873036412e+00, 3.814177365090332e-02),
+    //     7.349e22,
+    //     earth
+    // );
     auto mars = createBodyFromJPL(
         registry,
         Eigen::Vector3d(-7.890038131682469e+07, 2.274372361241295e+08, 6.722196400986686e+06),
@@ -119,26 +120,26 @@ void createSolarSystem(entt::registry &registry) {
     );
 
     // Create asteroids
-    std::default_random_engine generator;
-    std::uniform_real_distribution<double> distanceDistribution(300.0e9, 500.0e9);
-    std::uniform_real_distribution<double> speedDistribution(15000.0, 25000.0);
-    std::uniform_real_distribution<double> angleDistribution(0.0, 2.0 * M_PI);
-    std::uniform_real_distribution<double> massDistribution(1.0e15, 1.0e20);
-    for (int i = 0; i < 100; i++) {
-        double distance = distanceDistribution(generator);
-        double speed = speedDistribution(generator);
-        double angle = angleDistribution(generator);
-        double mass = massDistribution(generator);
-
-        Eigen::Vector3d position(distance * cos(angle), 0, distance * sin(angle));
-        Eigen::Vector3d velocity(-speed * sin(angle), 0, speed * cos(angle));
-
-        auto asteroid = registry.create();
-        registry.emplace<BodyState>(asteroid, sun, position, velocity);
-        registry.emplace<Body>(asteroid, mass);
-        registry.emplace<RenderDot>(asteroid, 0.007f);
-        // registry.emplace<RenderTrajectory>(asteroid);
-    }
+    // std::default_random_engine generator;
+    // std::uniform_real_distribution<double> distanceDistribution(300.0e9, 500.0e9);
+    // std::uniform_real_distribution<double> speedDistribution(15000.0, 25000.0);
+    // std::uniform_real_distribution<double> angleDistribution(0.0, 2.0 * M_PI);
+    // std::uniform_real_distribution<double> massDistribution(1.0e15, 1.0e20);
+    // for (int i = 0; i < 100; i++) {
+    //     double distance = distanceDistribution(generator);
+    //     double speed = speedDistribution(generator);
+    //     double angle = angleDistribution(generator);
+    //     double mass = massDistribution(generator);
+    //
+    //     Eigen::Vector3d position(distance * cos(angle), 0, distance * sin(angle));
+    //     Eigen::Vector3d velocity(-speed * sin(angle), 0, speed * cos(angle));
+    //
+    //     auto asteroid = registry.create();
+    //     registry.emplace<BodyState>(asteroid, sun, position, velocity);
+    //     registry.emplace<Body>(asteroid, mass);
+    //     registry.emplace<RenderDot>(asteroid, 0.007f);
+    //     // registry.emplace<RenderTrajectory>(asteroid);
+    // }
 
     for (auto entity : registry.view<BodyState>()) {
         if (entity != sun) registry.emplace<KeplerParameters>(entity);

@@ -74,9 +74,25 @@ void momentumKick(entt::registry &registry, double dt) {
     }
 }
 
+void linearDriftRootBodies(entt::registry &registry, double dt) {
+    // Drift bodies without parents linearly
+    auto view = registry.view<BodyState, Body>();
+    for (auto entity : view) {
+        auto &state = view.get<BodyState>(entity);
+        if (state.st.primary != entt::null) continue;
+
+        state.st.pos += dt * state.st.vel;
+    }
+}
+
 void keplerDrift(entt::registry &registry, double dt) {
     recalculateAllKeplerParameters(registry);
     keplerPropagationSystem(registry, dt);
+}
+
+void positionDrift(entt::registry &registry, double dt) {
+    linearDriftRootBodies(registry, dt);
+    keplerDrift(registry, dt);
 }
 
 } // namespace
@@ -84,7 +100,7 @@ void keplerDrift(entt::registry &registry, double dt) {
 void physicsUpdate(entt::registry &registry, double dt) {
     // Kick-drift-kick integrator
     momentumKick(registry, dt / 2);
-    keplerDrift(registry, dt);
+    positionDrift(registry, dt);
     momentumKick(registry, dt / 2);
 }
 

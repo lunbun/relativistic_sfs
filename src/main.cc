@@ -37,6 +37,10 @@ int main() {
     double time = 0.0;
     initRenderBodySystem();
 
+    double initialEnergy;
+    Eigen::Vector3d initialCOM, initialMomentum, initialAngularMomentum;
+    calculateConservedQuantities(registry, initialCOM, initialEnergy, initialMomentum, initialAngularMomentum);
+
     // Game loop
     while (!window->shouldClose()) {
         window->startFrame();
@@ -58,6 +62,18 @@ int main() {
         ImGui::Text("Total Energy: %.3e J", energy);
         ImGui::Text("Total Momentum: [%.3e, %.3e, %.3e] kg·m/s", momentum.x(), momentum.y(), momentum.z());
         ImGui::Text("Total Angular Momentum: [%.3e, %.3e, %.3e] kg·m²/s", angularMomentum.x(), angularMomentum.y(), angularMomentum.z());
+
+        ImGui::Text("Energy Drift: %.3e J", energy - initialEnergy);
+        ImGui::Text("Momentum Drift: [%.3e, %.3e, %.3e] kg·m/s",
+            momentum.x() - initialMomentum.x(),
+            momentum.y() - initialMomentum.y(),
+            momentum.z() - initialMomentum.z()
+        );
+        ImGui::Text("Angular Momentum Drift: [%.3e, %.3e, %.3e] kg·m²/s",
+            angularMomentum.x() - initialAngularMomentum.x(),
+            angularMomentum.y() - initialAngularMomentum.y(),
+            angularMomentum.z() - initialAngularMomentum.z()
+        );
 
         entt::entity sun = static_cast<entt::entity>(0);
         ImGui::Text("Sun Velocity: [%.3e, %.3e, %.3e] m",
