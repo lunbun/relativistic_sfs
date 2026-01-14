@@ -5,13 +5,13 @@
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 #include <imgui.h>
-#include <render/camera.h>
 
 #include "model/solar_system.h"
 #include "physics/kepler.h"
 #include "physics/physics.h"
-#include "render/body.h"
-#include "render/window.h"
+#include "render/init.h"
+#include "render/scene/camera.h"
+#include "render/gl/window.h"
 #include "util.h"
 
 int main() {
@@ -35,7 +35,7 @@ int main() {
     window->initImGui();
 
     double time = 0.0;
-    initRenderBodySystem();
+    initRenderSystem();
 
     double initialEnergy;
     Eigen::Vector3d initialCOM, initialMomentum, initialAngularMomentum;

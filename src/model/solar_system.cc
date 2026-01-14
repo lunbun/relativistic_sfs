@@ -6,7 +6,8 @@
 
 #include "physics/kepler.h"
 #include "physics/physics.h"
-#include "render/body.h"
+#include "render/scene/body.h"
+#include "render/scene/trajectory.h"
 
 namespace {
 

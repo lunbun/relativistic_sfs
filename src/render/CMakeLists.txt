@@ -1,7 +1,11 @@
 target_sources(relativistic_sfs PRIVATE
-        body.cc
-        body.h
-        camera.cc
-        camera.h
-        window.cc
-        window.h)
+        gl/shader.cc
+        gl/shader.h
+        gl/window.cc
+        gl/window.h
+        scene/body.cc
+        scene/body.h
+        scene/camera.cc
+        scene/camera.h
+        scene/trajectory.cc
+        scene/trajectory.h)

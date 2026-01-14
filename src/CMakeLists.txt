@@ -3,4 +3,4 @@ add_subdirectory(physics)
 add_subdirectory(render)
 
 target_sources(relativistic_sfs PRIVATE
-    main.cc)
+        main.cc)

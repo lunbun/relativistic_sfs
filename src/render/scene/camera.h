@@ -3,13 +3,13 @@
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 
-#include "render/window.h"
+#include "render/gl/window.h"
 
 struct Camera {
     entt::entity target;
     double distance;
-    double yaw;  // radians
-    double pitch;  // radians
+    double yaw; // radians
+    double pitch; // radians
     Eigen::Matrix4f viewMatrix;
     Eigen::Matrix4f projectionMatrix;
 };
