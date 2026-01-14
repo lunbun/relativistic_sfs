@@ -5,6 +5,8 @@
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 
+namespace sfs::physics {
+
 struct KeplerParameters {
     Eigen::Vector3d r0;
     Eigen::Vector3d v0;
@@ -25,3 +27,5 @@ void keplerPropagationSystem(entt::registry &registry, double dt);
 // NB: Caller must clear the `points` vector before calling
 // NB: Sampled points are relative to the primary's position at the current time
 void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector3d> &points, int n);
+
+} // namespace sfs::physics

@@ -18,13 +18,13 @@ int main() {
     std::cout << "Hello, World!" << std::endl;
 
     entt::registry registry;
-    std::unique_ptr<MainWindow> window = MainWindow::create();
+    std::unique_ptr<sfs::render::MainWindow> window = sfs::render::MainWindow::create();
 
-    createSolarSystem(registry);
+    sfs::model::createSolarSystem(registry);
 
     auto camera = registry.create();
     {
-        auto &cameraData = registry.emplace<Camera>(camera);
+        auto &cameraData = registry.emplace<sfs::render::Camera>(camera);
         cameraData.target = entt::null;
         cameraData.distance = 1.0e12;
         cameraData.yaw = 0.0;
@@ -35,21 +35,21 @@ int main() {
     window->initImGui();
 
     double time = 0.0;
-    initRenderSystem();
+    sfs::render::initRenderSystem();
 
     double initialEnergy;
     Eigen::Vector3d initialCOM, initialMomentum, initialAngularMomentum;
-    calculateConservedQuantities(registry, initialCOM, initialEnergy, initialMomentum, initialAngularMomentum);
+    sfs::physics::calculateConservedQuantities(registry, initialCOM, initialEnergy, initialMomentum, initialAngularMomentum);
 
     // Game loop
     while (!window->shouldClose()) {
         window->startFrame();
 
         constexpr double dt = 36000.0;
-        physicsUpdate(registry, dt);
+        sfs::physics::physicsUpdate(registry, dt);
         updateCameras(registry, *window, 1.0 / 144.0);
-        renderBodies(registry, camera);
-        renderTrajectories(registry, camera);
+        sfs::render::renderBodies(registry, camera);
+        sfs::render::renderTrajectories(registry, camera);
 
         time += dt;
         std::string formattedTime = formatDuration(std::chrono::seconds(static_cast<long long>(time)));
@@ -57,7 +57,7 @@ int main() {
 
         double energy;
         Eigen::Vector3d com, momentum, angularMomentum;
-        calculateConservedQuantities(registry, com, energy, momentum, angularMomentum);
+        sfs::physics::calculateConservedQuantities(registry, com, energy, momentum, angularMomentum);
         ImGui::Text("Center of Mass: [%.3e, %.3e, %.3e] m", com.x(), com.y(), com.z());
         ImGui::Text("Total Energy: %.3e J", energy);
         ImGui::Text("Total Momentum: [%.3e, %.3e, %.3e] kg·m/s", momentum.x(), momentum.y(), momentum.z());
@@ -77,9 +77,9 @@ int main() {
 
         entt::entity sun = static_cast<entt::entity>(0);
         ImGui::Text("Sun Velocity: [%.3e, %.3e, %.3e] m",
-            registry.get<BodyState>(sun).st.vel.x(),
-            registry.get<BodyState>(sun).st.vel.y(),
-            registry.get<BodyState>(sun).st.vel.z()
+            registry.get<sfs::physics::BodyState>(sun).st.vel.x(),
+            registry.get<sfs::physics::BodyState>(sun).st.vel.y(),
+            registry.get<sfs::physics::BodyState>(sun).st.vel.z()
         );
 
         window->endFrame();

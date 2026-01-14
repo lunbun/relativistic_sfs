@@ -6,6 +6,8 @@
 
 #include "physics/physics.h"
 
+namespace sfs::physics {
+
 namespace {
 
 double stumpff_C(double z) {
@@ -205,3 +207,5 @@ void sampleTrajectoryPoints(const KeplerParameters &p, std::vector<Eigen::Vector
         points.push_back(r);
     }
 }
+
+} // namespace sfs::physics

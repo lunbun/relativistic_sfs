@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+namespace sfs::render {
+
 class MainWindow {
 public:
     // Creates window and initializes OpenGL and ImGui.
@@ -34,3 +36,5 @@ private:
     int frameCount_;
     std::chrono::time_point<std::chrono::steady_clock> lastFpsReading_;
 };
+
+} // namespace sfs::render

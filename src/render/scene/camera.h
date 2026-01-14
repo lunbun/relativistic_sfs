@@ -5,6 +5,8 @@
 
 #include "render/gl/window.h"
 
+namespace sfs::render {
+
 struct Camera {
     entt::entity target;
     double distance;
@@ -16,3 +18,5 @@ struct Camera {
 
 void initCameraGLFWCallbacks(const MainWindow &window);
 void updateCameras(entt::registry &registry, const MainWindow &window, double dt);
+
+} // namespace sfs::render

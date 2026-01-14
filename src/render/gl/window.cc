@@ -13,6 +13,8 @@
 #include <backends/imgui_impl_opengl3.h>
 // clang-format on
 
+namespace sfs::render {
+
 constexpr int WIDTH = 1600;
 constexpr int HEIGHT = 1200;
 
@@ -125,3 +127,5 @@ void MainWindow::endFrame() {
         lastFpsReading_ = now;
     }
 }
+
+} // namespace sfs::render

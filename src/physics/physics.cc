@@ -4,6 +4,8 @@
 
 #include "physics/kepler.h"
 
+namespace sfs::physics {
+
 namespace {
 
 void gravitySystem(entt::registry &registry) {
@@ -145,3 +147,5 @@ void calculateConservedQuantities(entt::registry &registry, Eigen::Vector3d &com
         }
     }
 }
+
+} // namespace sfs::physics

@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+namespace sfs::render {
+
 GLuint compileShaderProgram(const char *vertexSource, const char *fragmentSource, int *success, const char *name) {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexSource, nullptr);
@@ -41,3 +43,5 @@ GLuint compileShaderProgram(const char *vertexSource, const char *fragmentSource
     glDeleteShader(fragmentShader);
     return program;
 }
+
+} // namespace sfs::render

@@ -9,6 +9,8 @@
 #include "render/scene/body.h"
 #include "render/scene/trajectory.h"
 
+namespace sfs::model {
+
 namespace {
 
 // position in km, velocity in km/s, mass in kg
@@ -23,16 +25,16 @@ entt::entity createBodyFromJPL(entt::registry &registry,
     position2 *= 1e3;
     velocity2 *= 1e3;
     if (parent != entt::null) {
-        const auto &parentState = registry.get<BodyState>(parent);
+        const auto &parentState = registry.get<physics::BodyState>(parent);
         position2 -= calculateAbsolutePosition(registry, parentState);
         velocity2 -= calculateAbsoluteVelocity(registry, parentState);
     }
 
     auto planet = registry.create();
-    registry.emplace<BodyState>(planet, parent, position2, velocity2);
-    registry.emplace<Body>(planet, mass);
-    registry.emplace<RenderDot>(planet, 0.02f);
-    if (parent != entt::null) registry.emplace<RenderTrajectory>(planet);
+    registry.emplace<physics::BodyState>(planet, parent, position2, velocity2);
+    registry.emplace<physics::Body>(planet, mass);
+    registry.emplace<render::RenderDot>(planet, 0.02f);
+    if (parent != entt::null) registry.emplace<render::RenderTrajectory>(planet);
     return planet;
 }
 
@@ -142,10 +144,12 @@ void createSolarSystem(entt::registry &registry) {
     //     // registry.emplace<RenderTrajectory>(asteroid);
     // }
 
-    for (auto entity : registry.view<BodyState>()) {
-        if (entity != sun) registry.emplace<KeplerParameters>(entity);
-        registry.emplace<ForceAccumulator>(entity);
+    for (auto entity : registry.view<physics::BodyState>()) {
+        if (entity != sun) registry.emplace<physics::KeplerParameters>(entity);
+        registry.emplace<physics::ForceAccumulator>(entity);
     }
 
-    recalculateAllKeplerParameters(registry);
+    physics::recalculateAllKeplerParameters(registry);
 }
+
+} // namespace sfs::model

@@ -3,6 +3,8 @@
 #include <Eigen/Dense>
 #include <entt/entt.hpp>
 
+namespace sfs::physics {
+
 constexpr double kGravitationalConstant = 6.67430e-11;
 
 struct PhysicsState {
@@ -68,3 +70,5 @@ void syncState(entt::registry &registry) {
         to.st = from.st;
     }
 }
+
+} // namespace sfs::physics

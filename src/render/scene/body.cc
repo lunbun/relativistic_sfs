@@ -11,10 +11,12 @@
 #include "render/gl/shader.h"
 #include "render/scene/camera.h"
 
-extern const char EMBED_START_ASSETS_DOT_VERT_GLSL[];
-extern const char EMBED_START_ASSETS_DOT_FRAG_GLSL[];
+namespace sfs::render {
 
 namespace {
+
+extern "C" const char EMBED_START_ASSETS_DOT_VERT_GLSL[];
+extern "C" const char EMBED_START_ASSETS_DOT_FRAG_GLSL[];
 
 GLuint dotVAO, dotVBO;
 GLuint dotShaderProgram;
@@ -71,10 +73,10 @@ void renderBodies(entt::registry &registry, entt::entity camera) {
     glUniformMatrix4fv(dot_uViewLoc, 1, GL_FALSE, cameraData.viewMatrix.data());
     glUniformMatrix4fv(dot_uProjectionLoc, 1, GL_FALSE, cameraData.projectionMatrix.data());
 
-    auto view = registry.view<BodyState, RenderDot>();
+    auto view = registry.view<physics::BodyState, RenderDot>();
     double lastSize = -1.0;
     for (auto entity : view) {
-        auto &body = view.get<BodyState>(entity);
+        auto &body = view.get<physics::BodyState>(entity);
         auto &dot = view.get<RenderDot>(entity);
         if (dot.size != lastSize) {
             lastSize = dot.size;
@@ -92,3 +94,5 @@ void renderBodies(entt::registry &registry, entt::entity camera) {
 
     glDisable(GL_BLEND);
 }
+
+} // namespace sfs::render

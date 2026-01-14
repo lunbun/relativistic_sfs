@@ -11,10 +11,12 @@
 #include "render/gl/shader.h"
 #include "render/scene/camera.h"
 
-extern const char EMBED_START_ASSETS_TRAJ_VERT_GLSL[];
-extern const char EMBED_START_ASSETS_TRAJ_FRAG_GLSL[];
+namespace sfs::render {
 
 namespace {
+
+extern "C" const char EMBED_START_ASSETS_TRAJ_VERT_GLSL[];
+extern "C" const char EMBED_START_ASSETS_TRAJ_FRAG_GLSL[];
 
 GLuint trajectoryVAO, trajectoryVBO;
 GLuint trajectoryShaderProgram;
@@ -66,17 +68,17 @@ void renderTrajectories(entt::registry &registry, entt::entity camera) {
     glUniformMatrix4fv(trajectory_uProjectionLoc, 1, GL_FALSE, cameraData.projectionMatrix.data());
 
     constexpr int n = 250;
-    auto view = registry.view<BodyState, KeplerParameters, RenderTrajectory>();
+    auto view = registry.view<physics::BodyState, physics::KeplerParameters, RenderTrajectory>();
     std::vector<Eigen::Vector3d> points;
     points.reserve(n);
     std::vector<float> bufferData;
     bufferData.reserve(3 * n);
     for (auto entity : view) {
-        auto &state = view.get<BodyState>(entity);
+        auto &state = view.get<physics::BodyState>(entity);
         if (state.st.primary == entt::null) continue;
 
-        auto &primaryState = view.get<BodyState>(state.st.primary);
-        auto &p = view.get<KeplerParameters>(entity);
+        auto &primaryState = view.get<physics::BodyState>(state.st.primary);
+        auto &p = view.get<physics::KeplerParameters>(entity);
         points.clear();
         sampleTrajectoryPoints(p, points, n);
 
@@ -106,3 +108,5 @@ void renderTrajectories(entt::registry &registry, entt::entity camera) {
     glBindVertexArray(0);
     glUseProgram(0);
 }
+
+} // namespace sfs::render

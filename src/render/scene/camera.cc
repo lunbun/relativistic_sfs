@@ -7,6 +7,8 @@
 
 #include "physics/physics.h"
 
+namespace sfs::render {
+
 namespace {
 
 Eigen::Matrix4f lookAt(
@@ -131,7 +133,7 @@ void updateCameras(entt::registry &registry, const MainWindow &window, double dt
 
         if (camera.target == entt::null) continue;
 
-        auto &targetState = registry.get<BodyState>(camera.target);
+        auto &targetState = registry.get<physics::BodyState>(camera.target);
 
         Eigen::Vector3f targetPos = calculateAbsolutePosition(registry, targetState).cast<float>();
         float x = camera.distance * cosf(camera.pitch) * sinf(camera.yaw);
@@ -144,3 +146,5 @@ void updateCameras(entt::registry &registry, const MainWindow &window, double dt
         camera.viewMatrix = lookAt(eye, center, up);
     }
 }
+
+} // namespace sfs::render
