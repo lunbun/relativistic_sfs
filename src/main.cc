@@ -48,7 +48,7 @@ int main() {
         constexpr double dt = 36000.0;
         sfs::physics::physicsUpdate(registry, dt);
         updateCameras(registry, *window, 1.0 / 144.0);
-        sfs::render::renderBodies(registry, camera);
+        sfs::render::renderDots(registry, camera);
         sfs::render::renderTrajectories(registry, camera);
 
         time += dt;

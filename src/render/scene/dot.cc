@@ -1,4 +1,4 @@
-#include "body.h"
+#include "dot.h"
 
 // clang-format off
 #include <glad/gl.h>
@@ -57,12 +57,12 @@ void initShaders() {
 
 } // namespace
 
-void initRenderBodySystem() {
+void initRenderDotSystem() {
     initDotBuffers();
     initShaders();
 }
 
-void renderBodies(entt::registry &registry, entt::entity camera) {
+void renderDots(entt::registry &registry, entt::entity camera) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

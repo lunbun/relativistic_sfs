@@ -8,7 +8,7 @@ struct RenderDot {
     float size;
 };
 
-void initRenderBodySystem();
-void renderBodies(entt::registry &registry, entt::entity camera);
+void initRenderDotSystem();
+void renderDots(entt::registry &registry, entt::entity camera);
 
 } // namespace sfs::render
