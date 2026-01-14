@@ -61,6 +61,8 @@ function(embed_file type path)
     )
 endfunction()
 
+embed_file(text assets/body_frag.glsl)
+embed_file(text assets/body_vert.glsl)
 embed_file(text assets/dot_frag.glsl)
 embed_file(text assets/dot_vert.glsl)
 embed_file(text assets/traj_frag.glsl)

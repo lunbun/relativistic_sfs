@@ -6,6 +6,7 @@
 
 #include "physics/kepler.h"
 #include "physics/physics.h"
+#include "render/scene/body.h"
 #include "render/scene/dot.h"
 #include "render/scene/trajectory.h"
 
@@ -18,7 +19,7 @@ entt::entity createBodyFromJPL(entt::registry &registry,
                              const Eigen::Vector3d &position,
                              const Eigen::Vector3d &velocity,
                              double mass,
-                             entt::entity parent) {
+                             entt::entity parent, float radius = -1.0f) {
     // Swap y and z components
     Eigen::Vector3d position2(position.x(), position.z(), position.y());
     Eigen::Vector3d velocity2(velocity.x(), velocity.z(), velocity.y());
@@ -33,7 +34,11 @@ entt::entity createBodyFromJPL(entt::registry &registry,
     auto planet = registry.create();
     registry.emplace<physics::BodyState>(planet, parent, position2, velocity2);
     registry.emplace<physics::Body>(planet, mass);
-    registry.emplace<render::RenderDot>(planet, 0.02f);
+    if (radius > 0.0f) {
+        registry.emplace<render::RenderBody>(planet, radius);
+    } else {
+        registry.emplace<render::RenderDot>(planet, 0.02f);
+    }
     if (parent != entt::null) registry.emplace<render::RenderTrajectory>(planet);
     return planet;
 }
@@ -55,21 +60,24 @@ void createSolarSystem(entt::registry &registry) {
         Eigen::Vector3d(-5.879699189509091e+07, -2.492820404148239e+07, 3.364042452841429e+06),
         Eigen::Vector3d(8.711982611106873e+00, -4.284856986770977e+01, -4.299279282370732e+00),
         3.302e23,
-        sun
+        sun,
+        2.4397e6f
     );
     auto venus = createBodyFromJPL(
         registry,
         Eigen::Vector3d(6.697319534635594e+07, 8.337171945245868e+07, -2.731933993919346e+06),
         Eigen::Vector3d(-2.735548307021769e+01, 2.182743070706988e+01, 1.878804135388283e+00),
         4.8685e24,
-        sun
+        sun,
+        6.0518e6f
     );
     auto earth = createBodyFromJPL(
         registry,
         Eigen::Vector3d(-2.758794880287251e+07, 1.439239583084676e+08, 1.921064327326417e+04),
         Eigen::Vector3d(-2.977686364628585e+01, -5.535813340802556e+00, -1.943387942073826e-04),
         5.97219e24,
-        sun
+        sun,
+        6.371e6f
     );
     // TODO: moon will need tidal forces
     // auto moon = createBodyFromJPL(
@@ -84,14 +92,16 @@ void createSolarSystem(entt::registry &registry) {
         Eigen::Vector3d(-7.890038131682469e+07, 2.274372361241295e+08, 6.722196400986686e+06),
         Eigen::Vector3d(-2.199759485544177e+01, -5.787405095472254e+00, 4.184257990340883e-01),
         6.4171e23,
-        sun
+        sun,
+        3.3895e6f
     );
     auto jupiter = createBodyFromJPL(
         registry,
         Eigen::Vector3d(1.571230833020991e+08, 7.429840488421507e+08, -6.597049828231782e+06),
         Eigen::Vector3d(-1.293244436609816e+01, 3.325781476287804e+00, 2.755437569190042e-01),
         1.89819e27,
-        sun
+        sun,
+        6.9911e7f
     );
     auto saturn = createBodyFromJPL(
         registry,

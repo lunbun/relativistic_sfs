@@ -3,6 +3,8 @@ target_sources(relativistic_sfs PRIVATE
         gl/shader.h
         gl/window.cc
         gl/window.h
+        scene/body.cc
+        scene/body.h
         scene/camera.cc
         scene/camera.h
         scene/dot.cc
